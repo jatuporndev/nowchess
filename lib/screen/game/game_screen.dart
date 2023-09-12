@@ -13,16 +13,46 @@ class GameScreen extends StatefulWidget {
 
 class _GameScreenState extends State<GameScreen> {
   late List<List<String>> board;
+  late List<List<String>> oldBoard;
+  int selectedRow = -1;
+  int selectedCol = -1;
+  late DatabaseReference refLobby;
 
   void initGame() {
-    SetUpPieces setUpPieces = SetUpPieces();
     List<List<String>> chessPieces =
         List.generate(8, (i) => List<String>.filled(8, ""));
-
-    setUpPieces.setPiece(chessPieces);
     setState(() {
       board = chessPieces;
     });
+    FeatData();
+  }
+
+  void handleBoard(int row, int col) {
+    print('[$row, $col]');
+    oldBoard = List.from(board.map((row) => List<String>.from(row)));
+    if (selectedRow == -1 && board[row][col].isNotEmpty) {
+      setState(() {
+        selectedRow = row;
+        selectedCol = col;
+      });
+    } else if (selectedRow != -1 && (row != selectedRow || col != selectedCol)) {
+      board[row][col] = board[selectedRow][selectedCol];
+      board[selectedRow][selectedCol] = "";
+      selectedRow = -1;
+      selectedCol = -1;
+      refLobby.set(board);
+    } else if (row == selectedRow && col == selectedCol) {
+      setState(() {
+        selectedRow = -1;
+        selectedCol = -1;
+      });
+    }
+
+  }
+
+  void undoMove() {
+    print(oldBoard);
+    refLobby.set(oldBoard);
   }
 
   String switchImage(String name) {
@@ -47,92 +77,137 @@ class _GameScreenState extends State<GameScreen> {
   @override
   void initState() {
     super.initState();
+    refLobby = FirebaseDatabase.instance.ref("lobby/${widget.lobbyKey}");
     initGame();
   }
 
-  Future<void> test() async {
-    DatabaseReference refLobby = FirebaseDatabase.instance.ref("lobba/s");
+  Future<void> FeatData() async {
     refLobby.onValue.listen((event) {
+      late List<List<String>> snapBoard;
       var snapshot = event.snapshot;
-      print(snapshot.value);
+      if (snapshot.value is List) {
+        snapBoard = (snapshot.value as List).map((list) {
+          if (list is List) {
+            return list.map((item) => item.toString()).toList();
+          } else {
+            return <String>[];
+          }
+        }).toList();
+      } else {
+        snapBoard = [];
+      }
       setState(() {
-        if (snapshot.value is List) {
-          // Assuming snapshot.value is a List of Lists of Strings or null
-          board = (snapshot.value as List).map((list) {
-            if (list is List) {
-              return list.map((item) => item.toString()).toList();
-            } else {
-              return <String>[];
-            }
-          }).toList();
-        } else {
-           board = [];
-        }
+        board = snapBoard;
       });
     });
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.brown[200],
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
+            // const Padding(
+            //   padding: EdgeInsets.all(8.0),
+            //   child: Text(
+            //     "Now Chess",
+            //     style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            //   ),
+            // ),
             Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: const Text(
-                "Now Chess",
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                children: [
+                  InkWell(
+                    onTap: () async => {print("undo"), undoMove()},
+                    child: Container(
+                        padding: EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            color: Colors.brown),
+                        child: Icon(Icons.undo,color: Colors.white,)
+                    ),
+                  ),
+                  Spacer(),
+                  InkWell(
+                    onTap: () async => {print("undo"), undoMove()},
+                    child: Container(
+                        padding: EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            color: Colors.redAccent),
+                        child: Icon(Icons.restart_alt,color: Colors.white,)
+                    ),
+                  ),
+                ],
               ),
             ),
-            Spacer(),
-            GridView.builder(
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 8,
-                ),
-                shrinkWrap: true,
-                itemCount: 8 * 8,
-                itemBuilder: (BuildContext ctx, index) {
-                  final row = 7 - (index ~/ 8);
-                  final col = (index % 8);
-                  final switchColor = (row + col) % 2 == 0
-                      ? Colors.brown[400]
-                      : Colors.brown[200];
+            const SizedBox(height: 56,),
+            SizedBox(height: 8,),
+            Padding(padding: EdgeInsets.all(2),child: boardView()),
+            const Spacer(),
+          ],
+        ),
+      ),
+    );
+  }
 
-                  return Container(
+  Container boardView() {
+    return Container(// Add padding to control the spacing around the GridView
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.brown, width: 4.0), // Add a black border around the GridView
+  //            borderRadius: BorderRadius.circular(8.0), // Optionally, add rounded corners
+            ),
+            child: GridView.builder(
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 8,
+              ),
+              shrinkWrap: true,
+              itemCount: 8 * 8,
+              itemBuilder: (BuildContext ctx, index) {
+                final row = 7 - (index ~/ 8);
+                final col = (index % 8);
+                final switchColor = (row + col) % 2 == 0
+                    ? Colors.brown[400]
+                    : Colors.brown[200];
+
+                final isSelected = selectedRow == row && selectedCol == col;
+
+                return GestureDetector(
+                  onTap: () => {handleBoard(row, col)},
+                  child: Container(
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: switchColor,
+                      border: isSelected
+                          ? Border.all(color: Colors.green, width: 2.0) // Add border for selected cell
+                          : null,
                     ),
                     child: Column(
                       children: [
                         Spacer(),
                         board[row][col].isNotEmpty
                             ? Image.asset(
-                                switchImage(board[row][col]),
-                                scale: 4,
-                              )
+                          switchImage(board[row][col]),
+                          scale: 4,
+                        )
                             : const SizedBox(),
-                        Spacer(),
-                        GestureDetector(
-                          onTap: () => {test()},
-                          child: Text(
-                            '[$row, $col]',
-                            style: TextStyle(fontSize: 12),
-                          ),
-                        ),
-                        Spacer(),
+                        const Spacer(),
+                        // Text(
+                        //   '[$row, $col]',
+                        //   style: const TextStyle(fontSize: 12),
+                        // ),
+                        // Spacer(),
                       ],
                     ),
-                  );
-                }),
-            Spacer(),
-          ],
-        ),
-      ),
-    );
+                  ),
+                );
+              },
+            ),
+          );
   }
 }

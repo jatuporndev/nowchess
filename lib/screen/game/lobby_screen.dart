@@ -16,7 +16,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
 
   Future<void> saveLobby(String key) async {
-    DatabaseReference refLobby = FirebaseDatabase.instance.ref("lobba/$key");
+    DatabaseReference refLobby = FirebaseDatabase.instance.ref("lobby/$key");
 
     SetUpPieces setUpPieces = SetUpPieces();
     List<List<String>> chessPieces = List.generate(8, (i) => List<String>.filled(8, ""));
