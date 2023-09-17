@@ -34,7 +34,6 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void handleBoard(int row, int col) {
-    print('[$row, $col]');
     oldBoard = List.from(board.map((row) => List<String>.from(row)));
     if (selectedRow == -1 && board[row][col].isNotEmpty) {
       setState(() {
@@ -53,7 +52,6 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void undoMove() {
-    print(oldBoard);
     refLobby.set(oldBoard);
   }
 
@@ -64,7 +62,7 @@ class _GameScreenState extends State<GameScreen> {
     if (row >= 0 && row < 8 && col >= 0 && col < 8) {
       switch (selectedPiece) {
         case "pawn-black":
-        case "pawn-white":
+        case "pawn-white"://เบี้ย
           isValidMove = m.isValidPawnMove(PieceMove(
               row: row,
               col: col,
@@ -74,7 +72,7 @@ class _GameScreenState extends State<GameScreen> {
               pieceType: selectedPiece));
           break;
         case "knight-white":
-        case "knight-black":
+        case "knight-black"://ม้า
           isValidMove = m.isValidKnightMove(PieceMove(
               row: row,
               col: col,
@@ -83,7 +81,26 @@ class _GameScreenState extends State<GameScreen> {
               board: board,
               pieceType: selectedPiece));
           break;
-        // Add cases for other piece types here
+        case "queen-white":
+        case "queen-black"://ขุน
+          isValidMove = m.isValidQueen(PieceMove(
+              row: row,
+              col: col,
+              selectedRow: selectedRow,
+              selectedCol: selectedCol,
+              board: board,
+              pieceType: selectedPiece));
+          break;
+        case "ship-white":
+        case "ship-black" :
+           isValidMove = m.isValidShip(PieceMove(
+               row: row,
+               col: col,
+               selectedRow: selectedRow,
+               selectedCol: selectedCol,
+               board: board,
+               pieceType: selectedPiece));
+          break;
       }
 
       if (isValidMove) {
@@ -145,22 +162,22 @@ class _GameScreenState extends State<GameScreen> {
               child: Row(
                 children: [
                   InkWell(
-                    onTap: () async => {print("undo"), undoMove()},
+                    onTap: () async => {undoMove()},
                     child: Container(
                         padding: EdgeInsets.all(8),
                         decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(12),
                             color: Colors.brown),
-                        child: Icon(
+                        child: const Icon(
                           Icons.undo,
                           color: Colors.white,
                         )),
                   ),
-                  Spacer(),
+                  const Spacer(),
                   InkWell(
-                    onTap: () async => {print("undo"), undoMove()},
+                    onTap: () async => {undoMove()},
                     child: Container(
-                        padding: EdgeInsets.all(8),
+                        padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(12),
                             color: Colors.redAccent),
@@ -175,10 +192,10 @@ class _GameScreenState extends State<GameScreen> {
             const SizedBox(
               height: 56,
             ),
-            SizedBox(
+            const SizedBox(
               height: 8,
             ),
-            Padding(padding: EdgeInsets.all(2), child: boardView()),
+            Padding(padding: const EdgeInsets.all(2), child: boardView()),
             const Spacer(),
           ],
         ),
@@ -196,7 +213,7 @@ class _GameScreenState extends State<GameScreen> {
         //            borderRadius: BorderRadius.circular(8.0), // Optionally, add rounded corners
       ),
       child: GridView.builder(
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 8,
         ),
         shrinkWrap: true,
@@ -223,7 +240,7 @@ class _GameScreenState extends State<GameScreen> {
               ),
               child: Column(
                 children: [
-                  Spacer(),
+                  const Spacer(),
                   board[row][col].isNotEmpty
                       ? Image.asset(
                           setUpPieces.switchImage(board[row][col]),
@@ -235,7 +252,7 @@ class _GameScreenState extends State<GameScreen> {
                     '[$row, $col]',
                     style: const TextStyle(fontSize: 12),
                   ),
-                  Spacer(),
+                  const Spacer(),
                 ],
               ),
             ),
