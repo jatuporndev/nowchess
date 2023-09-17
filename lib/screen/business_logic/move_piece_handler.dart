@@ -6,6 +6,14 @@ class MovePieceHandler {
   bool isValidPawnMove(PieceMove pm) {
     int direction = (pm.pieceType == "pawn-white") ? 1 : -1;
     int targetRow = pm.selectedRow + direction;
+    String currentPieceType = pm.pieceType;
+
+    bool isPawnAtStartingRow = (currentPieceType == "pawn-white" && pm.row == 5) ||
+        (currentPieceType == "pawn-black" && pm.row == 2);
+
+    if (isPawnAtStartingRow) {
+      pm.pieceType = "pawn2-${currentPieceType.split('-').last}";
+    }
 
     if (pm.row == targetRow && pm.col == pm.selectedCol && pm.board[targetRow][pm.selectedCol].isEmpty) {
       return true;
@@ -13,10 +21,13 @@ class MovePieceHandler {
 
     if (pm.row == targetRow && (pm.col == pm.selectedCol + 1 || pm.col == pm.selectedCol - 1)) {
       String targetPiece = pm.board[pm.row][pm.col];
-      return targetPiece.isNotEmpty && _isOppositeColor(pm.pieceType, targetPiece);
+      if (targetPiece.isNotEmpty && _isOppositeColor(currentPieceType, targetPiece)) {
+        return true;
+      }
     }
     return false;
   }
+
 
   bool isValidKnightMove(PieceMove pm) {
     List<List<int>> knightMoves = [
@@ -86,6 +97,31 @@ class MovePieceHandler {
     return false;
   }
 
+  bool isValidKhon(PieceMove pm) {
+    int direction = (pm.pieceType == "khon-white") ? 1 : -1;
+    int targetRow = pm.selectedRow + direction;
+    if((targetRow == pm.row && (pm.selectedCol + 1 == pm.col || pm.selectedCol - 1 == pm.col || pm.selectedCol == pm.col))) {
+      return _checkTarget(pm);
+    } else {
+      int direction = (pm.pieceType == "khon-white") ? -1 : 1;
+      int targetRow = pm.selectedRow + direction;
+      if((targetRow == pm.row && (pm.selectedCol + 1 == pm.col || pm.selectedCol - 1 == pm.col))) {
+        return _checkTarget(pm);
+      }
+    }
+    return false;
+  }
+
+  bool isValidMad(PieceMove pm) {
+    int rowDiff = (pm.row - pm.selectedRow).abs();
+    int colDiff = (pm.col - pm.selectedCol).abs();
+
+    if (rowDiff == colDiff) {
+      return _checkTarget(pm);
+    }
+
+    return false;
+  }
 
   bool _checkTarget(PieceMove pm) {
     String targetPiece = pm.board[pm.row][pm.col];

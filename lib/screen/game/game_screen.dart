@@ -25,7 +25,7 @@ class _GameScreenState extends State<GameScreen> {
 
   void initGame() {
     List<List<String>> chessPieces =
-        List.generate(8, (i) => List<String>.filled(8, ""));
+    List.generate(8, (i) => List<String>.filled(8, ""));
     setState(() {
       board = chessPieces;
     });
@@ -58,61 +58,52 @@ class _GameScreenState extends State<GameScreen> {
   void movePiece(int row, int col) {
     String selectedPiece = board[selectedRow][selectedCol];
     bool isValidMove = false;
+    PieceMove pm = PieceMove(
+      row: row,
+      col: col,
+      selectedRow: selectedRow,
+      selectedCol: selectedCol,
+      board: board,
+      pieceType: selectedPiece,
+    );
 
-    if (row >= 0 && row < 8 && col >= 0 && col < 8) {
-      switch (selectedPiece) {
-        case "pawn-black":
-        case "pawn-white"://เบี้ย
-          isValidMove = m.isValidPawnMove(PieceMove(
-              row: row,
-              col: col,
-              selectedRow: selectedRow,
-              selectedCol: selectedCol,
-              board: board,
-              pieceType: selectedPiece));
-          break;
-        case "knight-white":
-        case "knight-black"://ม้า
-          isValidMove = m.isValidKnightMove(PieceMove(
-              row: row,
-              col: col,
-              selectedRow: selectedRow,
-              selectedCol: selectedCol,
-              board: board,
-              pieceType: selectedPiece));
-          break;
-        case "queen-white":
-        case "queen-black"://ขุน
-          isValidMove = m.isValidQueen(PieceMove(
-              row: row,
-              col: col,
-              selectedRow: selectedRow,
-              selectedCol: selectedCol,
-              board: board,
-              pieceType: selectedPiece));
-          break;
-        case "ship-white":
-        case "ship-black" :
-           isValidMove = m.isValidShip(PieceMove(
-               row: row,
-               col: col,
-               selectedRow: selectedRow,
-               selectedCol: selectedCol,
-               board: board,
-               pieceType: selectedPiece));
-          break;
-      }
+    switch (selectedPiece) {
+      case "pawn-black":
+      case "pawn-white": //เบี้ย
+        isValidMove = m.isValidPawnMove(pm);
+        break;
+      case "knight-white":
+      case "knight-black": //ม้า
+        isValidMove = m.isValidKnightMove(pm);
+        break;
+      case "queen-white":
+      case "queen-black": //ขุน
+        isValidMove = m.isValidQueen(pm);
+        break;
+      case "ship-white":
+      case "ship-black": //เรือ
+        isValidMove = m.isValidShip(pm);
+        break;
+      case "khon-white":
+      case "khon-black": //โคน
+        isValidMove = m.isValidKhon(pm);
+        break;
+      case "mad-white":
+      case "mad-black": //เม็ด
+      case "pawn2-white": //เบี้ยเข้า
+      case "pawn2-black":
+        isValidMove = m.isValidMad(pm);
+        break;
+    }
 
-      if (isValidMove) {
-        board[row][col] = selectedPiece;
-        board[selectedRow][selectedCol] = "";
-        selectedRow = -1;
-        selectedCol = -1;
-        refLobby.set(board);
-      }
+    if (isValidMove) {
+      board[row][col] = pm.pieceType;
+      board[selectedRow][selectedCol] = "";
+      selectedRow = -1;
+      selectedCol = -1;
+      refLobby.set(board);
     }
   }
-
   @override
   void initState() {
     super.initState();
@@ -181,7 +172,7 @@ class _GameScreenState extends State<GameScreen> {
                         decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(12),
                             color: Colors.redAccent),
-                        child: Icon(
+                        child: const Icon(
                           Icons.restart_alt,
                           color: Colors.white,
                         )),
@@ -222,7 +213,7 @@ class _GameScreenState extends State<GameScreen> {
           final row = 7 - (index ~/ 8);
           final col = (index % 8);
           final switchColor =
-              (row + col) % 2 == 0 ? Colors.brown[400] : Colors.brown[200];
+          (row + col) % 2 == 0 ? Colors.brown[400] : Colors.brown[200];
 
           final isSelected = selectedRow == row && selectedCol == col;
 
@@ -234,8 +225,8 @@ class _GameScreenState extends State<GameScreen> {
                 color: switchColor,
                 border: isSelected
                     ? Border.all(
-                        color: Colors.green,
-                        width: 2.0) // Add border for selected cell
+                    color: Colors.green,
+                    width: 2.0) // Add border for selected cell
                     : null,
               ),
               child: Column(
@@ -243,9 +234,9 @@ class _GameScreenState extends State<GameScreen> {
                   const Spacer(),
                   board[row][col].isNotEmpty
                       ? Image.asset(
-                          setUpPieces.switchImage(board[row][col]),
-                          scale: 4,
-                        )
+                    setUpPieces.switchImage(board[row][col]),
+                    scale: 4,
+                  )
                       : const SizedBox(),
                   const Spacer(),
                   Text(
