@@ -1,49 +1,34 @@
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
-import 'package:nowchess/screen/game/game_screen.dart';
+import 'package:nowchess/screen/game/lobby_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../Util/set_up_pieces.dart';
-
-class LobbyScreen extends StatefulWidget {
-  const LobbyScreen({Key? key}) : super(key: key);
+class NameScreen extends StatefulWidget {
+  const NameScreen({Key? key}) : super(key: key);
 
   @override
-  State<LobbyScreen> createState() => _LobbyScreenState();
+  State<NameScreen> createState() => _NameScreenState();
 }
 
-class _LobbyScreenState extends State<LobbyScreen> {
+class _NameScreenState extends State<NameScreen> {
   final myController = TextEditingController();
   late final SharedPreferences prefs;
-
   String key = "playerName";
-  String name = "-";
 
-  Future<void> saveLobby(String key) async {
-    DatabaseReference refLobby = FirebaseDatabase.instance.ref("lobby/$key");
-
-    SetUpPieces setUpPieces = SetUpPieces();
-    List<List<String>> chessPieces =
-        List.generate(8, (i) => List<String>.filled(8, ""));
-    setUpPieces.setPiece(chessPieces);
-    await refLobby.child("chessPieces").set(chessPieces).then((value) => {
-          Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => GameScreen(
-                        lobbyKey: key,
-                        playerName: name,
-                      )))
+  Future<void> saveName(String name) async {
+    await prefs.setString(key, name).then((value) => {
+          Navigator.push(context,
+              MaterialPageRoute(builder: (context) => const LobbyScreen()))
         });
   }
 
-  void getName() {
+  void checkName() async {
     String? data = prefs.getString(key);
-    setState(() {
-      if (data != null) {
-        name = data;
+    if (data != null) {
+      if (data.isNotEmpty) {
+        Navigator.push(context,
+            MaterialPageRoute(builder: (context) => const LobbyScreen()));
       }
-    });
+    }
   }
 
   @override
@@ -54,7 +39,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
   Future<void> initializeSharedPreferences() async {
     prefs = await SharedPreferences.getInstance();
-    getName();
+    checkName();
   }
 
   @override
@@ -70,7 +55,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
             children: [
               Spacer(),
               Text(
-                "Hi, ${name} Enter Lobby Key",
+                "Enter Your Name",
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 32),
               ),
               SizedBox(
@@ -88,7 +73,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
               ),
               GestureDetector(
                 onTap: () async =>
-                    {print(myController.text), saveLobby(myController.text)},
+                    {print(myController.text), saveName(myController.text)},
                 child: Container(
                   padding: EdgeInsets.all(16),
                   decoration: BoxDecoration(

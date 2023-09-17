@@ -1,3 +1,4 @@
+
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:nowchess/screen/Util/set_up_pieces.dart';
@@ -6,8 +7,10 @@ import 'package:nowchess/screen/models/piece_move.dart';
 
 class GameScreen extends StatefulWidget {
   final String lobbyKey;
+  final String playerName;
 
-  const GameScreen({Key? key, required this.lobbyKey}) : super(key: key);
+  const GameScreen({Key? key, required this.lobbyKey, required this.playerName})
+      : super(key: key);
 
   @override
   State<GameScreen> createState() => _GameScreenState();
@@ -20,22 +23,23 @@ class _GameScreenState extends State<GameScreen> {
   int selectedCol = -1;
   late DatabaseReference refLobby;
   late MovePieceHandler m;
-
+  bool isWhitePlayer = true;
+  bool isWhiteTurn = true;
   SetUpPieces setUpPieces = SetUpPieces();
 
   void initGame() {
     List<List<String>> chessPieces =
-    List.generate(8, (i) => List<String>.filled(8, ""));
+        List.generate(8, (i) => List<String>.filled(8, ""));
     setState(() {
       board = chessPieces;
     });
     m = MovePieceHandler();
+    initPlayer();
     featData();
   }
 
   void handleBoard(int row, int col) {
-    oldBoard = List.from(board.map((row) => List<String>.from(row)));
-    if (selectedRow == -1 && board[row][col].isNotEmpty) {
+    if (selectedRow == -1 && board[row][col].isNotEmpty && board[row][col].endsWith(isWhitePlayer ? 'white' : 'black')) {
       setState(() {
         selectedRow = row;
         selectedCol = col;
@@ -52,7 +56,14 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void undoMove() {
-    refLobby.set(oldBoard);
+    refLobby.child("chessPieces").set(oldBoard);
+  }
+
+  void switchBoard() {
+    List<List<String>> chessPieces =
+    List.generate(8, (i) => List<String>.filled(8, ""));
+    setUpPieces.setPiece(chessPieces);
+    refLobby.child("chessPieces").set(chessPieces);
   }
 
   void movePiece(int row, int col) {
@@ -66,7 +77,7 @@ class _GameScreenState extends State<GameScreen> {
       board: board,
       pieceType: selectedPiece,
     );
-
+    oldBoard = List.from(board.map((row) => List<String>.from(row)));
     switch (selectedPiece) {
       case "pawn-black":
       case "pawn-white": //เบี้ย
@@ -101,22 +112,19 @@ class _GameScreenState extends State<GameScreen> {
       board[selectedRow][selectedCol] = "";
       selectedRow = -1;
       selectedCol = -1;
-      refLobby.set(board);
+      refLobby.update( {
+        "chessPieces": board,
+        "player/isWhiteTurn": !isWhiteTurn,
+      });
     }
-  }
-  @override
-  void initState() {
-    super.initState();
-    refLobby = FirebaseDatabase.instance.ref("lobby/${widget.lobbyKey}");
-    initGame();
   }
 
   Future<void> featData() async {
     refLobby.onValue.listen((event) {
       late List<List<String>> snapBoard;
       var snapshot = event.snapshot;
-      if (snapshot.value is List) {
-        snapBoard = (snapshot.value as List).map((list) {
+      if (snapshot.child("chessPieces").value is List) {
+        snapBoard = (snapshot.child("chessPieces").value as List).map((list) {
           if (list is List) {
             return list.map((item) => item.toString()).toList();
           } else {
@@ -126,10 +134,84 @@ class _GameScreenState extends State<GameScreen> {
       } else {
         snapBoard = [];
       }
+
+      if (snapshot.child("player/isWhiteTurn").value != null) {
+        setState(() {
+          if (snapshot.child("player/isWhiteTurn").value == true) {
+            isWhiteTurn = true;
+          } else {
+            isWhiteTurn = false;
+          }
+        });
+      }
+
       setState(() {
         board = snapBoard;
       });
     });
+  }
+
+  Future<void> initPlayer() async {
+    final playerRef = refLobby.child("player");
+    playerRef.get().then((value) => {
+          playerConfig(playerRef, value),
+        });
+    //playerTurnHandle(playerRef);
+    checkConnectionPlayer(playerRef);
+  }
+
+  void playerConfig(DatabaseReference playerRef, DataSnapshot value) async {
+    final whitePlayer = value.child("white-player").value;
+
+    setState(() {
+      if (whitePlayer == null || whitePlayer.toString().isEmpty) {
+        playerRef.child("white-player").set(widget.playerName);
+        isWhitePlayer = true;
+      } else {
+        playerRef.child("black-player").set(widget.playerName);
+        isWhitePlayer = false;
+      }
+    });
+  }
+
+  void playerTurnHandle(DatabaseReference playerRef) {
+    // playerRef.child("isWhiteTurn").onValue.listen((event) {
+    //   var snapshot = event.snapshot;
+    //   if (snapshot.value != null) {
+    //     setState(() {
+    //       if (snapshot.value == true) {
+    //         isWhiteTurn = true;
+    //       } else {
+    //         isWhiteTurn = false;
+    //       }
+    //     });
+    //   }
+    // });
+  }
+
+  void checkConnectionPlayer(DatabaseReference playerRef) {
+    if (isWhitePlayer) {
+      playerRef.child("white-player").onDisconnect().remove();
+    } else {
+      playerRef.child("black-player").onDisconnect().remove();
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    refLobby = FirebaseDatabase.instance.ref("lobby/${widget.lobbyKey}");
+    initGame();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    if (isWhitePlayer) {
+      refLobby.child("player").child("white-player").remove();
+    } else {
+      refLobby.child("player").child("black-player").remove();
+    }
   }
 
   @override
@@ -141,13 +223,6 @@ class _GameScreenState extends State<GameScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            // const Padding(
-            //   padding: EdgeInsets.all(8.0),
-            //   child: Text(
-            //     "Now Chess",
-            //     style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            //   ),
-            // ),
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: Row(
@@ -166,12 +241,12 @@ class _GameScreenState extends State<GameScreen> {
                   ),
                   const Spacer(),
                   InkWell(
-                    onTap: () async => {undoMove()},
+                    onTap: () async => {switchBoard()},
                     child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(12),
-                            color: Colors.redAccent),
+                            color: Colors.brown),
                         child: const Icon(
                           Icons.restart_alt,
                           color: Colors.white,
@@ -210,23 +285,27 @@ class _GameScreenState extends State<GameScreen> {
         shrinkWrap: true,
         itemCount: 8 * 8,
         itemBuilder: (BuildContext ctx, index) {
-          final row = 7 - (index ~/ 8);
-          final col = (index % 8);
+          final row = (isWhitePlayer) ? 7 - (index ~/ 8) : (index ~/ 8);
+          final col = (isWhitePlayer) ? (index % 8) : 7 - (index % 8);
           final switchColor =
-          (row + col) % 2 == 0 ? Colors.brown[400] : Colors.brown[200];
+              (row + col) % 2 == 0 ? Colors.brown[400] : Colors.brown[200];
 
           final isSelected = selectedRow == row && selectedCol == col;
 
           return GestureDetector(
-            onTap: () => {handleBoard(row, col)},
+            onTap: () {
+              if (isWhiteTurn == isWhitePlayer) {
+                handleBoard(row, col);
+              }
+            },
             child: Container(
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: switchColor,
                 border: isSelected
                     ? Border.all(
-                    color: Colors.green,
-                    width: 2.0) // Add border for selected cell
+                        color: Colors.green,
+                        width: 2.0) // Add border for selected cell
                     : null,
               ),
               child: Column(
@@ -234,16 +313,16 @@ class _GameScreenState extends State<GameScreen> {
                   const Spacer(),
                   board[row][col].isNotEmpty
                       ? Image.asset(
-                    setUpPieces.switchImage(board[row][col]),
-                    scale: 4,
-                  )
+                          setUpPieces.switchImage(board[row][col]),
+                          scale: 3,
+                        )
                       : const SizedBox(),
                   const Spacer(),
-                  Text(
-                    '[$row, $col]',
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                  const Spacer(),
+                  // Text(
+                  //   '[$row, $col]',
+                  //   style: const TextStyle(fontSize: 8),
+                  // ),
+                  // const Spacer(),
                 ],
               ),
             ),

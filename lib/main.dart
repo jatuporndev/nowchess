@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:nowchess/screen/game/game_screen.dart';
 import 'package:nowchess/screen/game/lobby_screen.dart';
+import 'package:nowchess/screen/game/name_screen.dart';
 
 import 'firebase_options.dart';
 
@@ -42,6 +43,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return const LobbyScreen();
+    return const NameScreen();
   }
 }
