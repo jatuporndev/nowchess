@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:nowchess/screen/game/game_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../Util/colors.dart';
 import '../Util/set_up_pieces.dart';
 
 class LobbyScreen extends StatefulWidget {
@@ -60,46 +61,118 @@ class _LobbyScreenState extends State<LobbyScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: ColorResource().main,
       body: SafeArea(
           child: Padding(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Spacer(),
-              Text(
-                "Hi, ${name} Enter Lobby Key",
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 32),
-              ),
-              SizedBox(
-                height: 16,
-              ),
-              TextField(
-                controller: myController,
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(),
-                  hintText: 'Enter a search term',
-                ),
-              ),
-              SizedBox(
-                height: 16,
-              ),
-              GestureDetector(
-                onTap: () async =>
-                    {print(myController.text), saveLobby(myController.text)},
-                child: Container(
-                  padding: EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      color: Colors.indigo),
-                  child: Text(
-                    "Enter lobby",
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text(
+                    "${name}",
                     style: TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.w500),
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: ColorResource().text
+                    ),
                   ),
-                ),
+                  SizedBox(width: 8,),
+                  GestureDetector(
+                    onTap: () async =>
+                    {},
+                    child: Container(
+                      padding: EdgeInsets.only(left: 16,right: 16,bottom: 6,top: 6),
+                      decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          color: ColorResource().button),
+                      child: Text(
+                        "Edit",
+                        style: TextStyle(
+                            color: ColorResource().text, fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 42,),
+              Text(
+                "Hi,  Enter Lobby Key",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 32,color: ColorResource().text),
+              ),
+              SizedBox(
+                height: 32,
+              ),
+              // TextField(
+              //   controller: myController,
+              //   decoration: InputDecoration(
+              //     prefixIcon: Icon(Icons.meeting_room,color: Colors.black45),
+              //     border: const OutlineInputBorder(),
+              //     focusedBorder: OutlineInputBorder(
+              //       borderSide: BorderSide(
+              //           width: 2, color: ColorResource().text),
+              //     ),
+              //     hintText: 'Enter Your Name',
+              //   ),
+              //   style: TextStyle(color: ColorResource().text),
+              //   cursorColor: ColorResource().text,
+              // ),
+              // SizedBox(
+              //   height: 16,
+              // ),
+              // GestureDetector(
+              //   onTap: () async =>
+              //       {print(myController.text), saveLobby(myController.text)},
+              //   child: Container(
+              //     padding: EdgeInsets.all(16),
+              //     decoration: BoxDecoration(
+              //         borderRadius: BorderRadius.circular(12),
+              //         color: ColorResource().button),
+              //     child: Text(
+              //       "Enter lobby",
+              //       style: TextStyle(
+              //           color: ColorResource().text, fontWeight: FontWeight.w500),
+              //     ),
+              //   ),
+              // ),
+              Row(
+                children: [
+                 Flexible(child:
+                 TextField(
+                   controller: myController,
+                   decoration: InputDecoration(
+                     prefixIcon: Icon(Icons.meeting_room,color: Colors.black45),
+                     border: const OutlineInputBorder(),
+                     focusedBorder: OutlineInputBorder(
+                       borderSide: BorderSide(
+                           width: 2, color: ColorResource().text),
+                     ),
+                     hintText: 'Enter Your Name',
+                   ),
+                   style: TextStyle(color: ColorResource().text),
+                   cursorColor: ColorResource().text,
+                 )),
+                  const SizedBox(width: 8,),
+                  GestureDetector(
+                    onTap: () async =>
+                    {print(myController.text), saveLobby(myController.text)},
+                    child: Container(
+                      padding: EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          color: ColorResource().button),
+                      child: Text(
+                        "Enter",
+                        style: TextStyle(
+                            color: ColorResource().text, fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                  )
+                ],
               ),
               Spacer(),
             ],
