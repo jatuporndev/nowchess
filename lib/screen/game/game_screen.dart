@@ -1,4 +1,3 @@
-
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:nowchess/screen/Util/set_up_pieces.dart';
@@ -25,6 +24,8 @@ class _GameScreenState extends State<GameScreen> {
   late MovePieceHandler m;
   bool isWhitePlayer = true;
   bool isWhiteTurn = true;
+  String whitePlayerName = "-";
+  String blackPlayerName = "-";
   SetUpPieces setUpPieces = SetUpPieces();
 
   void initGame() {
@@ -114,7 +115,7 @@ class _GameScreenState extends State<GameScreen> {
       selectedCol = -1;
       refLobby.update( {
         "chessPieces": board,
-        "player/isWhiteTurn": !isWhiteTurn,
+        "isWhiteTurn": !isWhiteTurn,
       });
     }
   }
@@ -135,9 +136,9 @@ class _GameScreenState extends State<GameScreen> {
         snapBoard = [];
       }
 
-      if (snapshot.child("player/isWhiteTurn").value != null) {
+      if (snapshot.child("isWhiteTurn").value != null) {
         setState(() {
-          if (snapshot.child("player/isWhiteTurn").value == true) {
+          if (snapshot.child("isWhiteTurn").value == true) {
             isWhiteTurn = true;
           } else {
             isWhiteTurn = false;
@@ -156,37 +157,38 @@ class _GameScreenState extends State<GameScreen> {
     playerRef.get().then((value) => {
           playerConfig(playerRef, value),
         });
-    //playerTurnHandle(playerRef);
     checkConnectionPlayer(playerRef);
   }
 
   void playerConfig(DatabaseReference playerRef, DataSnapshot value) async {
     final whitePlayer = value.child("white-player").value;
-
     setState(() {
       if (whitePlayer == null || whitePlayer.toString().isEmpty) {
         playerRef.child("white-player").set(widget.playerName);
         isWhitePlayer = true;
+        //whitePlayerName = whitePlayer.toString();
       } else {
         playerRef.child("black-player").set(widget.playerName);
         isWhitePlayer = false;
+       // blackPlayerName = blackPlayer.toString();
       }
     });
-  }
 
-  void playerTurnHandle(DatabaseReference playerRef) {
-    // playerRef.child("isWhiteTurn").onValue.listen((event) {
-    //   var snapshot = event.snapshot;
-    //   if (snapshot.value != null) {
-    //     setState(() {
-    //       if (snapshot.value == true) {
-    //         isWhiteTurn = true;
-    //       } else {
-    //         isWhiteTurn = false;
-    //       }
-    //     });
-    //   }
-    // });
+    playerRef.onValue.listen((event) {
+      var snapshot = event.snapshot;
+      var whiteName = snapshot.child("white-player");
+      var blackName = snapshot.child("black-player");
+      if(whiteName.value != null){
+        whitePlayerName = whiteName.value.toString();
+      }else {
+        whitePlayerName = "-";
+      }
+      if(blackName.value != null) {
+        blackPlayerName = blackName.value.toString();
+      }else {
+        blackPlayerName = "-";
+      }
+    });
   }
 
   void checkConnectionPlayer(DatabaseReference playerRef) {
@@ -256,10 +258,67 @@ class _GameScreenState extends State<GameScreen> {
               ),
             ),
             const SizedBox(
-              height: 56,
+              height: 8,
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                children: [
+                  Column(
+                    children: [
+                      Container(
+                        width: 48, // Adjust the width and height as needed
+                        height: 48,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.white, // Border color
+                            width: 3.0, // Border width
+                          ),
+                        ),
+                        child: Image.asset(
+                          setUpPieces.switchImage("knight-white"),
+                          scale: 3,
+                        ),
+                      ),
+                      Text(whitePlayerName)
+                    ],
+                  ),
+                  Spacer(),
+                  Column(
+                    children: [
+                      Text("Turn"),
+                      SizedBox(height: 4,),
+                      Text((isWhiteTurn) ? "White" : "Black" ,style: TextStyle(fontSize: 24,fontWeight: FontWeight.bold,
+                      color: (isWhiteTurn) ? Colors.white : Colors.black)),
+                    ],
+                  ),
+                  Spacer(),
+                 Column(
+                   children: [
+                     Container(
+                       width: 48, // Adjust the width and height as needed
+                       height: 48,
+                       decoration: BoxDecoration(
+                         shape: BoxShape.circle,
+                         border: Border.all(
+                           color: Colors.black, // Border color
+                           width: 3.0, // Border width
+                         ),
+                       ),
+                       child: Image.asset(
+                         setUpPieces.switchImage("knight-black"),
+                         scale: 3,
+                       ),
+                     ),
+                     Text(blackPlayerName)
+                   ],
+                 )
+                ],
+              ),
             ),
             const SizedBox(
-              height: 8,
+              height: 24,
             ),
             Padding(padding: const EdgeInsets.all(2), child: boardView()),
             const Spacer(),
